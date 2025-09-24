@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dental Forms Cashier</title>
+  <style>
+    body {
+      font-family: "Times New Roman", serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, white, pink, purple);
+      color: black;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(12px);
+    }
+    header h1 {
+      font-size: 22px;
+      margin: 0;
+    }
+    header img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .container {
+      padding: 20px;
+    }
+    .tile {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(10px);
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+    input, button {
+      font-family: "Times New Roman", serif;
+      padding: 8px 10px;
+      margin: 5px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      cursor: pointer;
+      background: purple;
+      color: white;
+      border: none;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: deeppink;
+    }
+    #checkout-list {
+      list-style: none;
+      padding: 0;
+    }
+    #checkout-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255,255,255,0.7);
+      padding: 8px;
+      margin-bottom: 5px;
+      border-radius: 8px;
+    }
+    #checkout-list li span {
+      flex: 1;
+    }
+    .delete-btn {
+      background: crimson;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      cursor: pointer;
+    }
+    #sales-report table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    #sales-report th, #sales-report td {
+      border: 1px solid black;
+      padding: 6px;
+      text-align: center;
+    }
+    #sales-report th {
+      background: pink;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Dental Forms Cashier</h1>
+    <img src="logo.png" alt="Logo">
+  </header>
+  <div class="container">
+
+    <!-- Search & Add to Cart -->
+    <div class="tile">
+      <h2>Search Product</h2>
+      <input type="text" id="searchBox" placeholder="Type product name...">
+      <div id="searchResults"></div>
+    </div>
+
+    <!-- Checkout Area -->
+    <div class="tile">
+      <h2>Checkout</h2>
+      <ul id="checkout-list"></ul>
+      <p><strong>Total:</strong> ₱<span id="total">0</span></p>
+      <button onclick="checkout()">Checkout</button>
+    </div>
+
+    <!-- Sales Report -->
+    <div class="tile" id="sales-report">
+      <h2>Sales Report</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Sold Qty</th>
+            <th>Remaining Stock</th>
+          </tr>
+        </thead>
+        <tbody id="report-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const products = [
+      { name: "Complete Denture Live Patient", price: 15, stock: 0, sold: 0 },
+      { name: "Complete Denture Cast", price: 10, stock: 0, sold: 0 },
+      { name: "RPD Drawing", price: 5, stock: 0, sold: 0 },
+      { name: "RPD Cast Grading", price: 10, stock: 0, sold: 0 },
+      { name: "RPD Live Grading", price: 10, stock: 0, sold: 0 },
+      { name: "Endodontics", price: 50, stock: 0, sold: 0 },
+      { name: "Perio/OP", price: 15, stock: 0, sold: 0 },
+      { name: "Oral Surgery", price: 10, stock: 0, sold: 0 },
+      { name: "PFM & FPD Typodonts", price: 10, stock: 0, sold: 0 },
+      { name: "PFM & FPD Live", price: 15, stock: 0, sold: 0 },
+      { name: "Restorative Typodonts", price: 5, stock: 0, sold: 0 },
+      { name: "Restorative Live", price: 10, stock: 0, sold: 0 },
+      { name: "Mastercard Patient/Student", price: 30, stock: 0, sold: 0 },
+      { name: "31 Accomplishment", price: 25, stock: 0, sold: 0 },
+      { name: "32 Accomplishment", price: 35, stock: 0, sold: 0 },
+      { name: "41 Accomplishment", price: 30, stock: 0, sold: 0 },
+      { name: "42 Accomplishment", price: 20, stock: 0, sold: 0 }
+    ];
+
+    let cart = [];
+
+    // Ask for initial stock
+    window.onload = () => {
+      products.forEach(p => {
+        let qty = parseInt(prompt(`Enter initial stock for ${p.name}:`, "0")) || 0;
+        p.stock = qty;
+      });
+      updateReport();
+    };
+
+    function searchProducts() {
+      const query = document.getElementById("searchBox").value.toLowerCase();
+      const resultsDiv = document.getElementById("searchResults");
+      resultsDiv.innerHTML = "";
+      products
+        .filter(p => p.name.toLowerCase().includes(query))
+        .forEach(p => {
+          let btn = document.createElement("button");
+          btn.textContent = `${p.name} (₱${p.price})`;
+          btn.onclick = () => addToCartPrompt(p.name);
+          resultsDiv.appendChild(btn);
+        });
+    }
+    document.getElementById("searchBox").addEventListener("input", searchProducts);
+    function addToCartPrompt(productName) {
+      const product = products.find(p => p.name === productName);
+      if (!product) return;
+      if (product.stock <= 0) {
+        alert("Out of stock!");
+        return;
+      }
+      const qty = parseInt(prompt(`Enter quantity for ${product.name} (Available: ${product.stock}):`, "1")) || 0;
+      if (qty > 0 && qty <= product.stock) {
+        cart.push({ name: product.name, price: product.price, qty });
+        product.stock -= qty;
+        updateCart();
+        updateReport();
+      } else {
+        alert("Invalid quantity!");
+      }
+    }
+
+    function updateCart() {
+      const list = document.getElementById("checkout-list");
+      const totalEl = document.getElementById("total");
+      list.innerHTML = "";
+      let total = 0;
+      cart.forEach((item, index) => {
+        let li = document.createElement("li");
+        let span = document.createElement("span");
+        span.textContent = `${item.name} x${item.qty} = ₱${item.price * item.qty}`;
+        let delBtn = document.createElement("button");
+        delBtn.textContent = "X";
+        delBtn.className = "delete-btn";
+        delBtn.onclick = () => removeFromCart(index, item);
+        li.appendChild(span);
+        li.appendChild(delBtn);
+        list.appendChild(li);
+        total += item.price * item.qty;
+      });
+      totalEl.textContent = total;
+    }
+
+    function removeFromCart(index, item) {
+      const product = products.find(p => p.name === item.name);
+      if (product) product.stock += item.qty;
+      cart.splice(index, 1);
+      updateCart();
+      updateReport();
+    }
+
+    function checkout() {
+      cart.forEach(item => {
+        const product = products.find(p => p.name === item.name);
+        if (product) {
+          product.sold += item.qty;
+        }
+      });
+      cart = [];
+      updateCart();
+      updateReport();
+      alert("Checkout successful!");
+    }
+
+    function updateReport() {
+      const body = document.getElementById("report-body");
+      body.innerHTML = "";
+      products.forEach(p => {
+        let row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${p.name}</td>
+          <td>${p.sold}</td>
+          <td>${p.stock}</td>
+        `;
+        body.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>
