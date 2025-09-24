@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dental Cashier System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 { text-align: center; }
+    .search-box { text-align: center; margin-bottom: 20px; }
+    input, select {
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #30363d;
+      background: #0d1117;
+      color: #e6edf3;
+    }
+    button {
+      background: #238636;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      margin: 5px 5px 0 0;
+    }
+    button:disabled { background: #555; cursor: not-allowed; }
+    .cart {
+      max-width: 800px;
+      margin: 20px auto;
+      background: #161b22;
+      padding: 15px;
+      border-radius: 10px;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 8px; border-bottom: 1px solid #30363d; text-align: center; }
+    .report-actions { margin: 20px 0; text-align: center; }
+    .modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    .modal-content {
+      background: #161b22;
+      padding: 20px;
+      border-radius: 10px;
+      max-height: 80%;
+      overflow-y: auto;
+    }
+    .modal-content input { width: 80px; }
+    .suggestions {
+      background: #161b22;
+      border: 1px solid #30363d;
+      position: absolute;
+      width: 250px;
+      max-height: 150px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+    .suggestion-item {
+      padding: 6px;
+      cursor: pointer;
+    }
+    .suggestion-item:hover { background: #238636; }
+  </style>
+</head>
+<body>
+
+<h1>Dental Cashier System</h1>
+
+<div class="search-box">
+  <div style="position: relative; display: inline-block;">
+    <input type="text" id="searchItem" placeholder="Search item..." autocomplete="off" style="width:250px;">
+    <div id="suggestions" class="suggestions" style="display:none;"></div>
+  </div>
+  <input type="number" id="itemQty" min="1" value="1">
+  <button onclick="addToCart()">Add to Cart</button>
+</div>
+
+<div class="cart" id="cartSection" style="display:none;">
+  <h2>Cart</h2>
+  <table id="cartTable">
+    <thead>
+      <tr><th>Item</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <h3 id="cartTotal"></h3>
+  <button onclick="checkout()">Checkout</button>
+</div>
+
+<div class="report-actions">
+  <button onclick="showReport()">View Sales Report</button>
+  <button onclick="exportCSV()">Export CSV</button>
+  <button onclick="printReport()">Print Report</button>
+  <button onclick="resetSystem()">Reset System</button>
+</div>
+
+<div id="reportSection" class="cart" style="display:none;">
+  <h2>Sales Report</h2>
+  <table id="reportTable">
+    <thead>
+      <tr>
+        <th>Item</th><th>Qty Sold</th><th>Total Sales (₱)</th><th>Remaining Stock</th><th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <h3 id="grandTotal"></h3>
+</div>
+
+<!-- Stock Setup Modal -->
+<div class="modal" id="stockModal">
+  <div class="modal-content">
+    <h2>Enter Initial Stock</h2>
+    <form id="stockForm"></form>
+    <button onclick="saveInitialStock()">Save Stock</button>
+  </div>
+</div>
+
+<script>
+const items = [
+  { name: "Complete Denture Live Patient", price: 15 },
+  { name: "Complete Denture Cast", price: 10 },
+  { name: "RPD Drawing", price: 5 },
+  { name: "RPD Cast Grading", price: 10 },
+  { name: "RPD Live Grading", price: 10 },
+  { name: "Endodontics", price: 50 },
+  { name: "Perio/OP", price: 15 },
+  { name: "Oral Surgery", price: 10 },
+  { name: "PFM & FPD Typodonts", price: 10 },
+  { name: "PFM & FPD Live", price: 15 },
+  { name: "Restorative Typodonts", price: 5 },
+  { name: "Restorative Live", price: 10 },
+  { name: "Mastercard Patient/Student", price: 30 },
+  { name: "31 Accomplishment", price: 25 },
+  { name: "32 Accomplishment", price: 35 },
+  { name: "41 Accomplishment", price: 30 },
+  { name: "42 Accomplishment", price: 20 }
+];
+
+let salesData = JSON.parse(localStorage.getItem("salesData")) || {};
+let stockData = JSON.parse(localStorage.getItem("stockData")) || {};
+let cart = [];
+
+// initialize storage
+function init() {
+  items.forEach(item => {
+    if (!salesData[item.name]) salesData[item.name] = 0;
+    if (!stockData[item.name]) stockData[item.name] = 0;
+  });
+  localStorage.setItem("salesData", JSON.stringify(salesData));
+  localStorage.setItem("stockData", JSON.stringify(stockData));
+}
+
+// --- Search Suggestions ---
+document.getElementById("searchItem").addEventListener("input", function() {
+  const query = this.value.toLowerCase();
+  const suggestions = document.getElementById("suggestions");
+  suggestions.innerHTML = "";
+  if (query.length === 0) {
+    suggestions.style.display = "none";
+    return;
+  }
+  const matches = items.filter(i => i.name.toLowerCase().includes(query));
+  matches.forEach(m => {
+    const div = document.createElement("div");
+    div.textContent = m.name;
+    div.className = "suggestion-item";
+    div.onclick = () => {
+      document.getElementById("searchItem").value = m.name;
+      suggestions.style.display = "none";
+    };
+    suggestions.appendChild(div);
+  });
+  suggestions.style.display = matches.length ? "block" : "none";
+});
+
+// --- Cart Functions ---
+function addToCart() {
+  const name = document.getElementById("searchItem").value;
+  const qty = parseInt(document.getElementById("itemQty").value) || 1;
+  const item = items.find(i => i.name === name);
+
+  if (!item) return alert("Item not found.");
+  if (!stockData[item.name] || stockData[item.name] < qty) return alert("Not enough stock.");
+
+  const existing = cart.find(c => c.name === item.name);
+  if (existing) existing.qty += qty;
+  else cart.push({ name: item.name, price: item.price, qty });
+
+  renderCart();
+  document.getElementById("searchItem").value = "";
+  document.getElementById("itemQty").value = 1;
+}
+
+function renderCart() {
+  const tbody = document.querySelector("#cartTable tbody");
+  tbody.innerHTML = "";
+  let total = 0;
+  cart.forEach(c => {
+    const subtotal = c.qty * c.price;
+    total += subtotal;
+    tbody.innerHTML += `<tr>
+      <td>${c.name}</td><td>${c.qty}</td><td>₱${c.price}</td><td>₱${subtotal}</td>
+    </tr>`;
+  });
+  document.getElementById("cartTotal").textContent = "Total: ₱" + total;
+  document.getElementById("cartSection").style.display = cart.length ? "block" : "none";
+}
+
+function checkout() {
+  if (!cart.length) return;
+  cart.forEach(c => {
+    salesData[c.name] += c.qty;
+    stockData[c.name] -= c.qty;
+  });
+  localStorage.setItem("salesData", JSON.stringify(salesData));
+  localStorage.setItem("stockData", JSON.stringify(stockData));
+  cart = [];
+  renderCart();
+  alert("Checkout complete!");
+}
+
+// --- Report ---
+function showReport() {
+  const tbody = document.querySelector("#reportTable tbody");
+  tbody.innerHTML = "";
+  let grandTotal = 0;
+
+  items.forEach(item => {
+    const sold = salesData[item.name] || 0;
+    const total = sold * item.price;
+    const remaining = stockData[item.name] || 0;
+    tbody.innerHTML += `<tr>
+      <td>${item.name}</td>
+      <td>${sold}</td>
+      <td>₱${total}</td>
+      <td>${remaining}</td>
+      <td><button onclick="addStock('${item.name}')">Add Stock</button></td>
+    </tr>`;
+    grandTotal += total;
+  });
+  document.getElementById("grandTotal").textContent = "Grand Total: ₱" + grandTotal;
+  document.getElementById("reportSection").style.display = "block";
+}
+
+// --- Add Stock Anytime ---
+function addStock(name) {
+  const add = parseInt(prompt("Enter stock to add for " + name)) || 0;
+  if (add > 0) {
+    stockData[name] = (stockData[name] || 0) + add;
+    localStorage.setItem("stockData", JSON.stringify(stockData));
+    showReport();
+  }
+}
+
+// --- Export / Print / Reset ---
+function exportCSV() {
+  let csv = "Item,Qty Sold,Total Sales,Remaining Stock\n";
+  items.forEach(item => {
+    const sold = salesData[item.name] || 0;
+    const total = sold * item.price;
+    const remaining = stockData[item.name] || 0;
+    csv += `"${item.name}",${sold},${total},${remaining}\n`;
+  });
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "sales_report.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function printReport() {
+  const report = document.getElementById("reportSection").innerHTML;
+  const win = window.open("", "", "width=900,height=600");
+  win.document.write("<html><head><title>Print Report</title></head><body>");
+  win.document.write(report);
+  win.document.write("</body></html>");
+  win.document.close();
+  win.print();
+}
+
+function resetSystem() {
+  if (confirm("Reset system? This will clear all data.")) {
+    localStorage.removeItem("salesData");
+    localStorage.removeItem("stockData");
+    salesData = {}; stockData = {}; cart = [];
+    document.getElementById("stockModal").style.display = "flex";
+  }
+}
+
+function saveInitialStock() {
+  const form = document.getElementById("stockForm");
+  const inputs = form.querySelectorAll("input");
+  stockData = {}; salesData = {};
+  inputs.forEach(input => {
+    const name = input.name;
+    const value = parseInt(input.value) || 0;
+    stockData[name] = value;
+    salesData[name] = 0;
+  });
+  localStorage.setItem("stockData", JSON.stringify(stockData));
+  localStorage.setItem("salesData", JSON.stringify(salesData));
+  document.getElementById("stockModal").style.display = "none";
+  init();
+}
+
+// --- On Load ---
+window.onload = () => {
+  const form = document.getElementById("stockForm");
+  form.innerHTML = "";
+  items.forEach(item => {
+    form.innerHTML += `<label>${item.name}: 
+      <input type="number" name="${item.name}" min="0" required>
+    </label><br>`;
+  });
+  if (Object.keys(stockData).length === 0) {
+    document.getElementById("stockModal").style.display = "flex";
+  } else {
+    init();
+  }
+};
+</script>
+
+</body>
+    </html>
