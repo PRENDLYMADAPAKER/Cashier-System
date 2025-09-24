@@ -404,7 +404,7 @@
 
   // Print / Save Report (only Sales Report section)
 function printReport() {
-  const report = document.querySelector(".sales-report").innerHTML; // fixed class selector
+  const report = document.querySelector(".sales-report").innerHTML; // use class selector
   const printWindow = window.open("", "_blank");
 
   printWindow.document.write(`
@@ -426,9 +426,9 @@ function printReport() {
     </html>
   `);
 
-     printWindow.document.close();
-     printWindow.print();
-  }
+  printWindow.document.close();
+  printWindow.print();
+}
 
   // Reset Report
   function resetReport() {
