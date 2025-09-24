@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dental Forms Cashier</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, rgba(255,192,203,0.8), rgba(128,0,128,0.8), rgba(255,255,255,0.8));
+      backdrop-filter: blur(10px);
+      min-height: 100vh;
+      padding: 20px;
+      color: #000;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #fff;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+    }
+
+    .search-container {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .search-container input {
+      width: 60%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .product-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .product {
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .product:hover {
+      transform: scale(1.03);
+    }
+
+    .product h3 {
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    .product p {
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .product button {
+      padding: 8px 12px;
+      border: none;
+      background: #e75480;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .product button:hover {
+      background: #d14270;
+    }
+
+    .checkout {
+      background: rgba(255,255,255,0.8);
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .checkout h2 {
+      margin-bottom: 10px;
+    }
+
+    .checkout table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .checkout th, .checkout td {
+      border-bottom: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .checkout td .remove-btn {
+      color: red;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .checkout-total {
+      margin-top: 10px;
+      text-align: right;
+      font-weight: 600;
+    }
+
+    .checkout button {
+      margin-top: 10px;
+      padding: 10px 15px;
+      border: none;
+      background: purple;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .checkout button:hover {
+      background: #5e1a8a;
+    }
+
+    .sales-report {
+      background: rgba(255,255,255,0.8);
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .sales-report h2 {
+      margin-bottom: 10px;
+    }
+
+    .sales-report table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .sales-report th, .sales-report td {
+      border-bottom: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .report-actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .report-actions button {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .print-btn { background: #28a745; color: white; }
+    .reset-btn { background: #dc3545; color: white; }
+    .stock-btn { background: #007bff; color: white; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Dental Forms Cashier</h1>
+    <img src="https://i.imgur.com/sjdlb28.jpeg" alt="Logo" class="logo">
+  </header>
+
+  <div class="search-container">
+    <input type="text" id="searchBox" placeholder="Search product...">
+  </div>
+
+  <div class="product-list" id="productList">
+    <!-- Products will be rendered here -->
+  </div>
+
+  <div class="checkout">
+    <h2>Checkout</h2>
+    <table id="checkoutTable">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Total</th>
+          <th>Remove</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="checkout-total">Total: ₱<span id="checkoutTotal">0</span></div>
+    <button id="checkoutBtn">Checkout</button>
+  </div>
+
+  <div class="sales-report">
+    <h2>Sales Report</h2>
+    <table id="salesTable">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Sold</th>
+          <th>Remaining</th>
+          <th>Total Sales</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="checkout-total">Total Sales: ₱<span id="totalSales">0</span></div>
+    <div class="report-actions">
+      <button class="stock-btn" id="addStockBtn">Add Stock</button>
+      <button class="print-btn" onclick="printReport()">Print/Save</button>
+      <button class="reset-btn" onclick="resetReport()">Reset Results</button>
+    </div>
+      </div>
+      <script>
+  // === Product List (Name + Price) ===
+  const products = [
+    { name: "Complete Denture Live Patient", price: 15 },
+    { name: "Complete Denture Cast", price: 10 },
+    { name: "RPD Drawing", price: 5 },
+    { name: "RPD Cast Grading", price: 10 },
+    { name: "RPD Live Grading", price: 10 },
+    { name: "Endodontics", price: 50 },
+    { name: "Perio/OP", price: 15 },
+    { name: "Oral Surgery", price: 10 },
+    { name: "PFM & FPD Typodonts", price: 10 },
+    { name: "PFM & FPD Live", price: 15 },
+    { name: "Restorative Typodonts", price: 5 },
+    { name: "Restorative Live", price: 10 },
+    { name: "Mastercard Patient/Student", price: 30 },
+    { name: "31 Accomplishment", price: 25 },
+    { name: "32 Accomplishment", price: 35 },
+    { name: "41 Accomplishment", price: 30 },
+    { name: "42 Accomplishment", price: 20 }
+  ];
+
+  // === Stocks, Cart, and Sales Data ===
+  let stock = {};
+  let cart = [];
+  let sales = {};
+  let totalSales = 0;
+
+  // Initialize stock by asking user input
+  function initializeStock() {
+    products.forEach(p => {
+      let qty = parseInt(prompt(`Enter initial stock for ${p.name} (₱${p.price}):`, "0")) || 0;
+      stock[p.name] = qty;
+      sales[p.name] = { sold: 0, total: 0 };
+    });
+    renderProducts();
+    renderSalesReport();
+  }
+
+  // Render product list
+  function renderProducts(filter = "") {
+    const list = document.getElementById("productList");
+    list.innerHTML = "";
+    products
+      .filter(p => p.name.toLowerCase().includes(filter.toLowerCase()))
+      .forEach(p => {
+        const div = document.createElement("div");
+        div.className = "product";
+        div.innerHTML = `
+          <h3>${p.name}</h3>
+          <p>₱${p.price}</p>
+          <p>Stock: ${stock[p.name]}</p>
+          <button onclick="addToCartPrompt('${p.name}')">Add to Cart</button>
+        `;
+        list.appendChild(div);
+      });
+  }
+
+  // Add to cart with quantity prompt
+  function addToCartPrompt(productName) {
+    let qty = parseInt(prompt(`Enter quantity for ${productName}:`, "1"));
+    if (isNaN(qty) || qty <= 0) return;
+
+    if (stock[productName] < qty) {
+      alert("Not enough stock!");
+      return;
+    }
+
+    let product = products.find(p => p.name === productName);
+    let existing = cart.find(c => c.name === productName);
+
+    if (existing) {
+      existing.qty += qty;
+      existing.total = existing.qty * existing.price;
+    } else {
+      cart.push({ name: productName, qty: qty, price: product.price, total: qty * product.price });
+    }
+
+    stock[productName] -= qty;
+    renderProducts(document.getElementById("searchBox").value);
+    renderCart();
+  }
+
+  // Render checkout cart
+  function renderCart() {
+    const tbody = document.querySelector("#checkoutTable tbody");
+    tbody.innerHTML = "";
+    let total = 0;
+
+    cart.forEach((item, index) => {
+      total += item.total;
+      let row = `<tr>
+        <td>${item.name}</td>
+        <td>${item.qty}</td>
+        <td>₱${item.price}</td>
+        <td>₱${item.total}</td>
+        <td><span class="remove-btn" onclick="removeFromCart(${index})">X</span></td>
+      </tr>`;
+      tbody.innerHTML += row;
+    });
+
+    document.getElementById("checkoutTotal").textContent = total;
+  }
+
+  // Remove from cart
+  function removeFromCart(index) {
+    let item = cart[index];
+    stock[item.name] += item.qty;
+    cart.splice(index, 1);
+    renderCart();
+    renderProducts(document.getElementById("searchBox").value);
+  }
+
+  // Checkout process
+  document.getElementById("checkoutBtn").addEventListener("click", () => {
+    cart.forEach(item => {
+      sales[item.name].sold += item.qty;
+      sales[item.name].total += item.total;
+      totalSales += item.total;
+    });
+    cart = [];
+    renderCart();
+    renderSalesReport();
+  });
+
+  // Render sales report
+  function renderSalesReport() {
+    const tbody = document.querySelector("#salesTable tbody");
+    tbody.innerHTML = "";
+    for (let name in sales) {
+      let row = `<tr>
+        <td>${name}</td>
+        <td>${sales[name].sold}</td>
+        <td>${stock[name]}</td>
+        <td>₱${sales[name].total}</td>
+      </tr>`;
+      tbody.innerHTML += row;
+    }
+    document.getElementById("totalSales").textContent = totalSales;
+  }
+
+  // Add Stock button
+  document.getElementById("addStockBtn").addEventListener("click", () => {
+    let productName = prompt("Enter product name to add stock:");
+    if (!productName || !stock.hasOwnProperty(productName)) {
+      alert("Invalid product name!");
+      return;
+    }
+    let qty = parseInt(prompt(`Enter quantity to add for ${productName}:`, "0"));
+    if (isNaN(qty) || qty <= 0) return;
+    stock[productName] += qty;
+    renderProducts(document.getElementById("searchBox").value);
+    renderSalesReport();
+  });
+
+  // Print / Save Report
+  function printReport() {
+    window.print();
+  }
+
+  // Reset Report
+  function resetReport() {
+    if (confirm("Are you sure you want to reset all sales data?")) {
+      for (let name in sales) {
+        sales[name].sold = 0;
+        sales[name].total = 0;
+      }
+      totalSales = 0;
+      renderSalesReport();
+    }
+  }
+
+  // Search filter
+  document.getElementById("searchBox").addEventListener("input", (e) => {
+    renderProducts(e.target.value);
+  });
+
+  // Initialize system
+  initializeStock();
+</script>
+</body>
+</html>
