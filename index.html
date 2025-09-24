@@ -402,10 +402,34 @@
     renderSalesReport();
   });
 
-  // Print / Save Report
-  function printReport() {
-    window.print();
-  }
+  // Print / Save Report (only Sales Report section)
+function printReport() {
+  const report = document.getElementById("sales-report").innerHTML;
+  const original = document.body.innerHTML;
+
+  document.body.innerHTML = `
+    <html>
+      <head>
+        <title>Sales Report</title>
+        <style>
+          body { font-family: Poppins, sans-serif; margin: 20px; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid #000; padding: 8px; text-align: center; }
+          h2 { text-align: center; margin-bottom: 20px; }
+          .total { font-weight: bold; margin-top: 20px; text-align: right; }
+        </style>
+      </head>
+      <body>
+        <h2>Sales Report</h2>
+        ${report}
+      </body>
+    </html>
+  `;
+
+  window.print();
+
+  document.body.innerHTML = original;
+        }
 
   // Reset Report
   function resetReport() {
